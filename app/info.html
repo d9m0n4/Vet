@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <!-- <base href="/"> -->
 
-    <title>ЯМСББЖ</title>
+    <title>Информация | Яранская межрайонная СББЖ</title>
     <meta name="description" content="" />
 
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
@@ -25,7 +25,7 @@
     <link rel="stylesheet" href="./libs/slick/slick/slick.css" />
   </head>
 
-  <body class="about">
+  <body class="info">
     <header class="header">
       <div class="container">
         <div class="top-line">
@@ -44,9 +44,19 @@
         <div class="container">
           <ul class="navigation-list">
             <li class="navigation-list__item"><a href="/">Главная</a></li>
-            <li class="navigation-list__item"><a href="">История</a></li>
-            <li class="navigation-list__item"><a href="">Информация</a></li>
-            <li class="navigation-list__item"><a href="">Прейскурант</a></li>
+            <li class="navigation-list__item">
+              <a>История</a>
+              <ul class="sub-navigation-list">
+                <li class="sub-navigation-list__item">
+                  <a href="./aboutVetService.html">История вет службы</a>
+                </li>
+                <li class="sub-navigation-list__item">
+                  <a href="./aboutVetLab.html">История вет лаборатории</a>
+                </li>
+              </ul>
+            </li>
+            <li class="navigation-list__item"><a href="./info.html">Информация</a></li>
+            <li class="navigation-list__item"><a href="./img/Pages/Price/1.doc">Прейскурант</a></li>
             <li class="navigation-list__item"><a href="./team.html">Наш коллектив</a></li>
             <li class="navigation-list__item"><a href="./contacts.html">Контакты</a></li>
           </ul>
@@ -63,8 +73,34 @@
           <div class="info__page__body">
             <div class="accordeon">
               <div class="accordeon-item">
-                <div class="accordeon-item__title"></div>
-                <div class="accordeon-item__content"></div>
+                <div class="accordeon-item__title">Реквизиты КОГБУ «Яранская межрайСББЖ»</div>
+                <div class="accordeon-item__content">
+                  <img
+                    class="img-responsive flex50 w50 info-img"
+                    src="./img/Pages/Info/1.jpg"
+                    alt=""
+                  />
+                </div>
+              </div>
+              <div class="accordeon-item">
+                <div class="accordeon-item__title">Лицензия</div>
+                <div class="accordeon-item__content">
+                  <img class="img-responsive info-img" src="./img/Pages/Info/2.jpg" alt="" />
+                </div>
+              </div>
+              <div class="accordeon-item">
+                <div class="accordeon-item__title">Санитарно-эпидемиологическое заключение</div>
+                <div class="accordeon-item__content">
+                  <img
+                    class="img-responsive flex50 w50 info-img"
+                    src="./img/Pages/Info/3.jpg"
+                    alt=""
+                  /><img
+                    class="img-responsive flex50 w50 info-img"
+                    src="./img/Pages/Info/4.jpg"
+                    alt=""
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -135,6 +171,11 @@
         </div>
       </div>
     </footer>
+    <div class="loader">
+      <div class="load">
+        <div class="spinner spinner-3"></div>
+      </div>
+    </div>
     <script src="js/scripts.min.js"></script>
     <script src="./js/jquery-3.6.0.min.js"></script>
     <script src="./js/slick.min.js"></script>

@@ -682,7 +682,7 @@ a:active {
   height: 420px;
   border-radius: 4px;
 }
-.slick-list .slick-track {
+.slider .slick-list .slick-track {
   height: 100%;
   display: flex;
 }

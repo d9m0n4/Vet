@@ -1,89 +1,128 @@
-var syntax = 'scss', // Syntax: sass or scss;
-  gulpversion = '4'; // Gulp version: 3 or 4
+let preprocessor = 'sass', // Preprocessor (sass, less, styl); 'sass' also work with the Scss syntax in blocks/ folder.
+  fileswatch = 'html,htm,txt,json,md,woff2'; // List of files extensions for watching & hard reload
 
-var gulp = require('gulp'),
-  gutil = require('gulp-util'),
-  sass = require('gulp-sass')(require('sass')),
-  browserSync = require('browser-sync'),
-  concat = require('gulp-concat'),
-  uglify = require('gulp-uglify'),
-  cleancss = require('gulp-clean-css'),
-  rename = require('gulp-rename'),
-  autoprefixer = require('gulp-autoprefixer'),
-  notify = require('gulp-notify'),
-  rsync = require('gulp-rsync');
+const { src, dest, parallel, series, watch } = require('gulp');
+const browserSync = require('browser-sync').create();
+const bssi = require('browsersync-ssi');
+const ssi = require('ssi');
+const webpack = require('webpack-stream');
+const sass = require('gulp-sass')(require('sass'));
+const sassglob = require('gulp-sass-glob');
+const stylglob = require('gulp-noop');
+const cleancss = require('gulp-clean-css');
+const autoprefixer = require('gulp-autoprefixer');
+const rename = require('gulp-rename');
+const imagemin = require('gulp-imagemin');
+const newer = require('gulp-newer');
+const rsync = require('gulp-rsync');
+const del = require('del');
 
-gulp.task('browser-sync', function () {
-  browserSync({
+function browsersync() {
+  browserSync.init({
     server: {
-      baseDir: 'app',
+      baseDir: 'app/',
+      middleware: bssi({ baseDir: 'app/', ext: '.html' }),
     },
+    ghostMode: { clicks: false },
     notify: false,
-    // open: false,
-    // online: false, // Work Offline Without Internet Connection
-    // tunnel: true, tunnel: "projectname", // Demonstration page: http://projectname.localtunnel.me
+    online: true,
+    // tunnel: 'yousutename', // Attempt to use the URL https://yousutename.loca.lt
   });
-});
+}
 
-gulp.task('styles', function () {
-  return gulp
-    .src('app/' + syntax + '/**/*.' + syntax + '')
-    .pipe(sass({ outputStyle: 'expanded' }).on('error', notify.onError()))
-    .pipe(rename({ suffix: '.min', prefix: '' }))
-    .pipe(autoprefixer(['last 15 versions']))
-    .pipe(cleancss({ level: { 1: { specialComments: 0 } } })) // Opt., comment out when debugging
-    .pipe(gulp.dest('app/css'))
+function scripts() {
+  return src(['app/js/*.js', '!app/js/*.min.js'])
+    .pipe(
+      webpack({
+        mode: 'production',
+        performance: { hints: false },
+        module: {
+          rules: [
+            {
+              test: /\.(js)$/,
+              exclude: /(node_modules)/,
+              loader: 'babel-loader',
+              query: {
+                presets: ['@babel/env'],
+                plugins: ['babel-plugin-root-import'],
+              },
+            },
+          ],
+        },
+      }),
+    )
+    .on('error', function handleError() {
+      this.emit('end');
+    })
+    .pipe(rename('app.min.js'))
+    .pipe(dest('app/js'))
     .pipe(browserSync.stream());
-});
+}
 
-gulp.task('scripts', function () {
-  return (
-    gulp
-      .src([
-        'app/libs/jquery/dist/jquery.min.js',
-        'app/js/common.js', // Always at the end
-      ])
-      .pipe(concat('scripts.min.js'))
-      // .pipe(uglify()) // Mifify js (opt.)
-      .pipe(gulp.dest('app/js'))
-      .pipe(browserSync.reload({ stream: true }))
-  );
-});
+function styles() {
+  return src([`app/styles/${preprocessor}/*.*`, `!app/styles/${preprocessor}/_*.*`])
+    .pipe(eval(`${preprocessor}glob`)())
+    .pipe(eval(preprocessor)())
+    .pipe(autoprefixer({ overrideBrowserslist: ['last 10 versions'], grid: true }))
+    .pipe(cleancss({ level: { 1: { specialComments: 0 } } /* format: 'beautify' */ }))
+    .pipe(rename({ suffix: '.min' }))
+    .pipe(dest('app/css'))
+    .pipe(browserSync.stream());
+}
 
-gulp.task('code', function () {
-  return gulp.src('app/*.html').pipe(browserSync.reload({ stream: true }));
-});
+function images() {
+  return src(['app/img/**/*'])
+    .pipe(newer('app/img/dist'))
+    .pipe(dest('dist/img'))
+    .pipe(browserSync.stream());
+}
 
-gulp.task('rsync', function () {
-  return gulp.src('app/**').pipe(
+function buildcopy() {
+  return src(['{app/js,app/css}/*.min.*', 'app/img/**/*.*', '!app/img/**/*', 'app/fonts/**/*'], {
+    base: 'app/',
+  }).pipe(dest('dist'));
+}
+
+async function buildhtml() {
+  let includes = new ssi('app/', 'dist/', '/**/*.html');
+  includes.compile();
+  del('dist/parts', { force: true });
+}
+
+function cleandist() {
+  return del('dist/**/*', { force: true });
+}
+
+function deploy() {
+  return src('dist/').pipe(
     rsync({
-      root: 'app/',
+      root: 'dist/',
       hostname: 'username@yousite.com',
       destination: 'yousite/public_html/',
-      // include: ['*.htaccess'], // Includes files to deploy
-      exclude: ['**/Thumbs.db', '**/*.DS_Store'], // Excludes files from deploy
+      // clean: true, // Mirror copy with file deletion
+      include: [
+        /* '*.htaccess' */
+      ], // Included files to deploy,
+      exclude: ['**/Thumbs.db', '**/*.DS_Store'],
       recursive: true,
       archive: true,
       silent: false,
       compress: true,
     }),
   );
-});
-
-if (gulpversion == 3) {
-  gulp.task('watch', ['styles', 'scripts', 'browser-sync'], function () {
-    gulp.watch('app/' + syntax + '/**/*.' + syntax + '', ['styles']);
-    gulp.watch(['libs/**/*.js', 'app/js/common.js'], ['scripts']);
-    gulp.watch('app/*.html', ['code']);
-  });
-  gulp.task('default', ['watch']);
 }
 
-if (gulpversion == 4) {
-  gulp.task('watch', function () {
-    gulp.watch('app/' + syntax + '/**/*.' + syntax + '', gulp.parallel('styles'));
-    gulp.watch(['libs/**/*.js', 'app/js/common.js'], gulp.parallel('scripts'));
-    gulp.watch('app/*.html', gulp.parallel('code'));
-  });
-  gulp.task('default', gulp.parallel('styles', 'scripts', 'browser-sync', 'watch'));
+function startwatch() {
+  watch(`app/styles/${preprocessor}/**/*`, { usePolling: true }, styles);
+  watch(['app/js/**/*.js', '!app/js/**/*.min.js'], { usePolling: true }, scripts);
+  watch('app/images/src/**/*.{jpg,jpeg,png,webp,svg,gif}', { usePolling: true }, images);
+  watch(`app/**/*.{${fileswatch}}`, { usePolling: true }).on('change', browserSync.reload);
 }
+
+exports.scripts = scripts;
+exports.styles = styles;
+exports.images = images;
+exports.deploy = deploy;
+exports.assets = series(scripts, styles, images);
+exports.build = series(cleandist, scripts, styles, images, buildcopy, buildhtml);
+exports.default = series(scripts, styles, images, parallel(browsersync, startwatch));
